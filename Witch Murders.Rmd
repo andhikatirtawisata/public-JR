@@ -1,0 +1,112 @@
+---
+title: "ECON 172 Problem Set 3"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Setting Up and Part 2a
+```{r setting up, echo=TRUE}
+library(haven)
+library(tidyverse)
+library(summarytools)
+library(stargazer)
+library(readr)
+library(lfe)
+install.packages("vtable")
+library(vtable)
+library(ivpack)
+PS3data <- read_csv("ECON-172-SP22/PS3/Econ172_S22_PS3_data.csv")
+```
+## Part 2b
+```{r Part 2b, echo=TRUE}
+# Creating new column
+PS3data$total_murders <- PS3data$witch_murders + PS3data$oth_murders
+
+# Graphing Table (Stargazer did not work so I used another package)
+st(PS3data)
+
+# Trying to use Stargazer
+stargazer(PS3data, type = 'text')
+```
+  Based on the summary statistics, both witch_murders and oth_murders have a mean of 0.091, suggesting that on average there is an equal number of witch related and other murders. It is worth noting however, that the other murders variable has a slightly higher standard deviation, and a higher maximum. This suggests that the occurrence of other murders varies more, or there might be an outlier where many murders happen on a particular year in a particular village. For example, the maximum of both oth_murders and total_murders is 5, suggesting at some point a village has 5 non-witch related murders and 0 witch murders. 
+  
+  Furthermore, the any_rain variable has a mean of 0.171, suggesting that on average there is a flood or drought almost a fifth of the time. However from this summary we can't tell if a fraction of villages have extreme rainfall every year or if all villages have extreme rainfall in certain years, or a mixture of both. 
+## Part 2c
+```{r Part 2c, echo=TRUE}
+# Regression of total murders and extreme rainfall
+total_murders_rain <- felm(total_murders ~ any_rain |0|0|vid, data = PS3data)
+summary(total_murders_rain)
+
+# Adding additional explanatory variables
+total_murders_rain_education_traditional_religion <- felm(total_murders ~ any_rain + educat + trad_relig |0|0|vid, data = PS3data)
+summary(total_murders_rain_education_traditional_religion)
+```
+  For the first regression, we can see that there is a positive correlation between extreme rainfall and total murders. On average, having flood or drought increases the number of total murders by around 0.048, which is quite high considering it is around 30 percent of the mean number of total murders. Furthermore, the clustered SE is almost as large as the coefficient, suggesting the true difference could be closer to zero or even larger. The t-value is also quite large, even though still lower than 1.96, but it suggests that the regression is statistically significant at a high enough confidence level. 
+  
+  In the second regression, the coefficients for extreme rainfall and traditional religion are positive while the coefficient for education is negative. The coefficients tell us that on average, having a flood or drought increases the number of total murders by 0.04, an additional year of education decreases the number by 0.038, and traditional religion increases the number by only 0.0006. The clustered SE of extreme rainfall is slightly higher than the coefficient, and the t-value is below 1.96, suggesting that the regression is not statistically significance at the 95 percent confidence level and there is a possibility the true difference is zero when we construct confidence intervals. Furthermore, the variable for traditional religion has a very low coefficient, a high standard error and very low t-value, suggesting that it is not statistically significant in increasing total murders, and there is a high likelihood the true difference is zero. 
+  
+  Interestingly, the variable for education also has a large coefficient of -0.038 and a clustered SE that is smaller than the coefficient. The t-value is also quite large compared to the other variables, suggesting that it could be statistically significant at a high enough confidence level. Based on the regression results, I would infer that education has a higher effect on total murders than extreme rainfall or traditional religion. 
+```{r Part 2d, echo = TRUE}
+# Regression of total murders and disease outbreaks
+total_murders_disease <- felm(total_murders ~ any_disease |0|0|vid, data = PS3data)
+summary(total_murders_disease)
+
+# Adding additional explanatory variables
+total_murders_disease_education_traditional_religion <- felm(total_murders ~ any_disease + educat + trad_relig |0|0|vid, data = PS3data)
+summary(total_murders_disease_education_traditional_religion)
+```
+  In the first regression, we have a positive regression coefficient, suggesting that on average having a disease outbreak increases the number of murders by 0.0017 annually, a relatively small number. The clustered standard error is also quite large relative to the coefficient, which means when we construct the confidence interval 0 could be within it which means the true difference could be zero. Furthermore, the t value is very small, which means the regression is not statistically significant at 95 percent confidence.
+  
+  In the second regression, we see a similar pattern as the previous question, with education having a negative coefficient and disease outbreak and traditional religions having a positive coefficient. Based on the regression coefficient, we can infer that having a disease outbreak increases average annual murders by 0.0058, an additional year of education decreases average murders by 0.039, and traditional religion increases murders by 0.0013. 
+  
+  For both disease outbreak and traditional religion, the standard error is larger than the coefficient, suggesting that the true difference could be zero when we construct confidence intervals. Furthermore the t-value for both of these variables is very low, suggesting they are of low statistical significance.
+  
+  Just like in the previous question, the education variable has a much higher coefficient relative to the other variables, it has a lower standard error than the coefficient, and while the t-value is still below 1.96, it is still relatively high suggesting that the result is statistically significant at a high enough confidence level. The regression result suggest that education could be a more important variable in affecting the total number of murders annually. By the results of the last two questions, we can infer that the most effective way to reduce total murders would be to increase average years of schooling. 
+  
+  In comparison to the results for rainfall shocks, the coefficient for disease outbreaks is smaller, suggesting that having a disease outbreak may affect total murders less than extreme rainfall. The proportion of people practicing traditional religion remains statistically insignificant for both regressions. 
+```{r Part 2e, echo = TRUE}
+# First Stage Regression
+first_stage <- lm(famine ~ any_rain, data = PS3data)
+summary(first_stage)
+
+# Storing First Stage Predictions
+PS3data$famine.predict <- predict(first_stage)
+
+# Second Stage Regression
+second_stage <- lm(total_murders ~ famine.predict, data = PS3data)
+summary(second_stage)
+
+# Reduced Stage Regression
+reduced_stage <- lm(total_murders ~ any_rain, data = PS3data)
+summary(reduced_stage)
+
+# Using ivreg (Alternative approach)
+total_murders_famine_rain <- ivreg(total_murders ~ famine| any_rain ,
+x=TRUE, data = PS3data)
+summary(total_murders_famine_rain)
+```
+## Part 2f
+In lecture, we discussed that the instrumental variable must fulfill three conditions:
+
+1. Relevance: the instrument (extreme rainfall) is correlated with the regressor (famine or economic hardship)
+
+2. Exogeneity: the instrument is not correlated with any omitted variables or the outcome. (We can say that the instrument is randomly assigned)
+
+3. Exclusion Restriction: the instrument does not affect the outcome directly or any other variables; it only affects the outcome through the regressor.
+```{r, echo = TRUE}
+# Testing the correlation between famine and extreme rainfall
+rainfall_famine <- lm(famine ~ any_rain, data = PS3data)
+summary(rainfall_famine)
+```
+  For the first condition, it seems reasonable that extreme rainfall is correlated with famine. We can see from the above regression that the t-value for such a regression is very high, suggesting a high likelihood of correlation.
+  
+  For the second condition, I would argue that extreme rainfall is not randomly assigned. For example, villages located in arid regions or near lakes and rivers may be prone to floods or drought. A wealthier village or a village in a more developed area may have better infrastructure to manage floods. 
+  
+  The third condition could also fail since extreme rainfall could affect other variables such as education or disease. For example, frequent flooding may be associated with more diseases such as cholera or malaria. If an area is flooded frequently it may also affect childrens' ability to travel to school, hence lowering average years of schooling. 
+  
+  Because not all of the three conditions are true in every scenario, in my view this instrumental variable approach is not valid. 
