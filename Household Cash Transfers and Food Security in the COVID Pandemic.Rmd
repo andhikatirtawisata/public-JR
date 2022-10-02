@@ -1,0 +1,72 @@
+---
+title: "ECON 172 Household Cash Transfers and Food Security in the COVID Pandemic"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Setting Up 
+```{r setting up, echo=TRUE}
+library(haven)
+library(tidyverse)
+library(summarytools)
+library(stargazer)
+library(readr)
+PS2_data <- read_csv("ECON-172-SP22/PS2/Econ172_S22_PS2_data.csv")
+```
+## Part A
+  In a pre-post analysis such as this one, we do not have a well-defined treatment and control group, so we cannot find the difference in differences, or difference in outcome between the two groups. However, we know that data collected in the baseline round is when the group had no treatment, and the data collected in the endline survey round is after the group had received treatment. Since we want to find out the effect of treatment on outcome, we need two samples, one with and one without treatment, and having access to both baseline and endline rounds provide us with the needed data.
+  
+  There are many variables that affect nutritional outcome, such as location(access to stores), climate, education, etc. If any of these variables vary significantly over time, the difference in outcome at the baseline and endline rounds may be caused by one of the omitted variables. The only way we can estimate a causal relationship is if we are confident the omitted variables remain constant between the baseline and endline rounds.
+  
+  During the COVID pandemic, there is a lot of uncertainty and instability in many countries. Over the course of four weeks, we could see a spike and decline in cases, or people could get sick and recover within four weeks, and this would affect their economic and nutritional outcome. Hence, in my view I believe the omitted variables are not constant enough to completely dismiss the possibility of omitted variable bias. A possible solution to this would be to increase the duration between the baseline and endline surveys, so that any unforeseen events due to the pandemic become less significant over the long term.
+
+## Part B
+```{r part b, echo=TRUE}
+# Checking for difference in marriage status between baseline and endline
+married_time = lm(married~time, data = PS2_data)
+summary(married_time)
+
+# Checking for difference in location between baseline and endline
+urban_time = lm(urban~time, data = PS2_data)
+summary(urban_time)
+```
+  The estimate coefficient for the first regression is -0.02419, which means in the endline survey respondents were 0.02 times less likely to be married. Also, the t-value has an absolute value of just 0.384, which means the regression is has a very low confidence level of significance. In fact, the standard error is greater than the coefficient.
+  
+  The estimate coefficient for the second regression is -0.07258, which means in the endline survey respondents were 0.07 times less likely to live in an urban area. The t-value has an absolute value of 1.326, so it is also not statistically significant at 95 percent confidence level. The standard error is also very large, suggesting a large variation in values.
+  
+  From the two regressions, we see that the other variable taken into account in the data did not change much between the baseline and endline surveys. This means a change in nutritional status or spending is unlikely to be caused by a change in these variables, although the variables themselves could still have an effect.
+
+## Part C
+```{r part c, echo=TRUE}
+# Regression of nutrition index vs time
+nutrition_time = lm(nutrition~time, data = PS2_data)
+summary(nutrition_time)
+
+# Regression of nutrition index vs time + additional variables
+nutrition_time_married_urban = lm(nutrition~time+married+urban, data = PS2_data)
+summary(nutrition_time_married_urban)
+```
+  The estimate coefficient for the first regression is 0.18395, which means at the endline survey respondents on average scored 0.18395 better on the nutrition index, a positive correlation. The t-value is greater than 1.96, so the coefficient is statistically significant at 95 percent confidence level.
+  
+  When additional variables (being married and living in an urban area) are included in the second regression, the coefficient for time decreased to 0.171695, suggesting that the first regression was an overestimate and there were some omitted variables. It is however, still a positive correlation but the t-value decreased as well, suggesting the regression may not be as statistically significant. Based on the coefficient estimates, being married also has a very small effect on nutrition index, and is also not statistically significant. Living in an urban area appears to have a negative correlation with nutrition, with urban respondents scoring on average 0.17 less on the index. The t-statistic also shows some significance although not at the 95 percent confidence level.
+  
+  To infer a causal relationship, the coefficient must be statistically significant, and the coefficients for the other variables must be small. This is not what we see in the above regression, so we cannot say there is a causal relationship between cash transfers and nutrition status. On the other hand, we could infer that living in an urban area also has a significant affect on nutritional status.
+
+## Part D
+```{r part d, echo=TRUE}
+# Regression of total spending vs time
+spending_time = lm(spending~time, data = PS2_data)
+summary(spending_time)
+
+# Regression of total spending vs time + married and urban
+spending_time_married_urban = lm(spending~time+married+urban, data = PS2_data)
+summary(spending_time_married_urban)
+```
+  According to the first regression, a coefficient of -5.695 means . A t-statistic of -1.541 also means it is not statistically significant at 95 percent confidence level. However, according to the second regression, we see that married respondents on average spend 17.896 per household more than unmarried, and urban respondents spend 30.894 more on average. Both regressions are statistically significant at the 95 percent confidence level.
+  
+  An interesting pattern I noticed is that urban respondents spend more than non-urban respondents on average. This may explain why they generally score lower on the nutrition index. When people's living costs are higher, with the same income they would get less food, or higher spending may leave them with less money for nutritious food, which may explain why they score lower.
