@@ -1,0 +1,207 @@
+package byow.Core;
+
+import edu.princeton.cs.introcs.In;
+import edu.princeton.cs.introcs.StdDraw;
+
+import java.awt.*;
+import byow.TileEngine.TERenderer;
+import byow.TileEngine.TETile;
+import byow.TileEngine.Tileset;
+
+
+public class Interact {
+
+    public static final int MENU_LINE_HEIGHT = 3;
+    public static final int MENU_LEFT_START = 3;
+    private static int MENU_WIDTH = 40;
+    /** The height of the window of this game. */
+    private static int MENU_HEIGHT = 40;
+    /** The current round the user is on. */
+    private long seed;
+    private int width;
+    private int height;
+    TERenderer ter = new TERenderer();
+    TETile[][] frame;
+
+    public Interact(int width, int height, long seed) {
+        this.width = width;
+        this.height = height;
+        this.seed = seed;
+
+        clearForMenu();
+    }
+
+    public Interact(int w, int h) {
+        this(w, h, 1);
+    }
+
+    public void drawFrame(String s) {
+        /* Take the input string S and display it at the center of the screen,
+         * with the pen settings given below. */
+        StdDraw.clear(Color.BLACK);
+        StdDraw.setPenColor(Color.WHITE);
+        Font fontBig = new Font("Monaco", Font.BOLD, 30);
+        StdDraw.setFont(fontBig);
+        StdDraw.text(this.MENU_WIDTH / 2, this.MENU_HEIGHT / 2, s);
+
+        StdDraw.show();
+    }
+
+    public void showMenu() {
+        /* Take the input string S and display it at the center of the screen,
+         * with the pen settings given below. */
+        StdDraw.clear(Color.BLACK);
+        StdDraw.setPenColor(Color.WHITE);
+        Font fontBig = new Font("Monaco", Font.BOLD, 30);
+        StdDraw.setFont(fontBig);
+        StdDraw.text(this.MENU_WIDTH / 2, this.MENU_HEIGHT - MENU_LINE_HEIGHT, "Welcome to Proj3!");
+        StdDraw.text(this.MENU_WIDTH / 2, this.MENU_HEIGHT - 15, "New Game (N)");
+        StdDraw.text(this.MENU_WIDTH / 2, this.MENU_HEIGHT - 20, "Load Game (L)");
+        StdDraw.text(this.MENU_WIDTH / 2, this.MENU_HEIGHT - 25, "Quit (Q)");
+
+        StdDraw.show();
+    }
+
+    public void showHUD(String left, String middle, String right) {
+        //StdDraw.clear(Color.BLACK);
+        StdDraw.setPenColor(Color.yellow);
+        Font fontSmall = new Font("Monaco", Font.BOLD, 18);
+        StdDraw.setFont(fontSmall);
+        StdDraw.text(3, this.height - 1.5, left);
+        StdDraw.text(this.width/ 2, height - 1.5, middle);
+        StdDraw.text(this.width - 5, height - 1.5, right);
+        //StdDraw.line(0, this.height - 3, this.width, this.height - 3);
+
+        StdDraw.show();
+    }
+
+    public void clearForMenu() {
+        StdDraw.setCanvasSize(this.MENU_WIDTH * 16, this.MENU_HEIGHT * 16);
+        Font font = new Font("Monaco", Font.BOLD, 30);
+        StdDraw.setFont(font);
+        StdDraw.setXscale(0, this.MENU_WIDTH);
+        StdDraw.setYscale(0, this.MENU_HEIGHT);
+        StdDraw.clear(Color.BLACK);
+        StdDraw.enableDoubleBuffering();
+    }
+
+    public String inputSeed() {
+        //TODO: Read n letters of player input
+        StringBuffer sb = new StringBuffer();
+        while (true) {
+            if (StdDraw.hasNextKeyTyped()) {
+                char c = Character.toUpperCase(StdDraw.nextKeyTyped());
+                if (Character.isDigit(c)) {
+                    sb.append(c);
+                    drawFrame(sb.substring(0));
+                    StdDraw.pause(300);
+                } else if (c == 'S') {
+                    drawFrame("Starting new game ...");
+                    StdDraw.pause(1000);
+                    return sb.toString();
+                }
+            }
+        }
+        //return sb.toString();
+    }
+
+    public void handleMenu() {
+        //TODO: Read n letters of player input
+        StringBuffer sb = new StringBuffer();
+        while (true) {
+            if (StdDraw.hasNextKeyTyped()) {
+                char c = Character.toUpperCase(StdDraw.nextKeyTyped());
+                if (c == 'N') {
+                    drawFrame("Please Input Seed + Letter S: ");
+                    StdDraw.pause(1000);
+                    this.seed = Long.parseLong(inputSeed());
+                    System.out.println("seed:" + seed);
+
+                    //StdDraw.clear(Color.black);
+                    //StdDraw.clear();
+                    buildWorld();
+                    break;
+                } else if (c == 'L') {
+                    drawFrame("Loading game ...");
+                    StdDraw.pause(1500);
+                    break;
+                } else if (c == 'Q') {
+                    drawFrame("See you next time!");
+                    StdDraw.pause(1500);
+                    System.exit(0);
+                }
+            }
+        }
+
+        handleMovement();
+    }
+
+    public void handleMovement() {
+        //TODO: Read n letters of player input
+        StringBuffer sb = new StringBuffer();
+        while (true) {
+            int mx = (int) StdDraw.mouseX();
+            int my = (int) StdDraw.mouseY();
+            if (mx > 0 && mx < width && my > 0 && my < height) {
+                showHUD("", frame[mx][my].description(), "");
+                StdDraw.pause(1500);
+            }
+
+            if (StdDraw.hasNextKeyTyped()) {
+                char c = Character.toUpperCase(StdDraw.nextKeyTyped());
+                if (c == 'A' || c == 'S' || c == 'D' || c == 'W') {
+                    ter.renderFrame(frame);
+                    StdDraw.pause(1000);
+                } else if (c == 'L') {
+                    ter.renderFrame(frame);
+                    StdDraw.pause(1500);
+                } else if (c == 'Q') {
+                    ter.renderFrame(frame);
+                    StdDraw.pause(1500);
+                    System.exit(0);
+                }
+            }
+        }
+    }
+
+    public void buildWorld() {
+        // initialize the tile rendering engine with a window of size WIDTH x HEIGHT
+
+        ter.initialize(width, height);
+
+        // initialize tiles
+        frame = new TETile[width][height];
+        for (int x = 0; x < width; x += 1) {
+            for (int y = 0; y < height; y += 1) {
+                frame[x][y] = Tileset.NOTHING;
+            }
+        }
+
+        for (int x = 2; x < width - 2; x += 1) {
+            for (int y = 2; y < height - 2; y += 1) {
+                frame[x][y] = Tileset.WALL;
+            }
+        }
+
+        for (int x = 3; x < width - 3; x += 1) {
+            for (int y = 3; y < height - 3; y += 1) {
+                frame[x][y] = Tileset.FLOOR;
+            }
+        }
+
+        frame[width / 2][height / 2] = Tileset.AVATAR;
+        frame[width / 2 + 3][height / 2 + 3] = Tileset.STAR;
+        frame[width / 2 + 3][2] = Tileset.UNLOCKED_DOOR;
+
+        ter.renderFrame(frame);
+    }
+
+    public static void main(String[] args) {
+        long seed = 1;
+        Interact it = new Interact(95, 45, seed);;
+        it.showMenu();
+        it.handleMenu();
+        // it.drawFrame("Welcome to Project 3!");
+        // it.showHUD("Action!", "Let's play!", "Time to start!");
+    }
+}
